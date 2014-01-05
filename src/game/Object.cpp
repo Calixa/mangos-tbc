@@ -610,6 +610,14 @@ void Object::SetUInt32Value(uint16 index, uint32 value)
     }
 }
 
+void Object::UpdateUInt32Value(uint16 index, uint32 value)
+{
+    MANGOS_ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+
+    m_uint32Values[index] = value;
+    m_changedValues[index] = true;
+}
+
 void Object::SetUInt64Value(uint16 index, const uint64& value)
 {
     MANGOS_ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, true));
@@ -1529,6 +1537,28 @@ Creature* WorldObject::SummonCreature(uint32 id, float x, float y, float z, floa
 
     // return the creature therewith the summoner has access to it
     return pCreature;
+}
+
+GameObject* WorldObject::SummonGameObject(uint32 id, float x, float y, float z, float angle, uint32 despwtime)
+{
+    GameObject* pGameObj = new GameObject;
+
+    Map *map = GetMap();
+
+    if (!map)
+        return NULL;
+
+    if (!pGameObj->Create(map->GenerateLocalLowGuid(HIGHGUID_GAMEOBJECT), id, map, x, y, z, angle))
+    {
+        delete pGameObj;
+        return NULL;
+    }
+
+    pGameObj->SetRespawnTime(despwtime/IN_MILLISECONDS);
+
+    map->Add(pGameObj);
+
+    return pGameObj;
 }
 
 namespace MaNGOS

@@ -144,6 +144,8 @@ enum Powers
     POWER_FOCUS                         = 2,
     POWER_ENERGY                        = 3,
     POWER_HAPPINESS                     = 4,
+    MAX_POWERS                          = 5,
+    POWER_ALL                           = 127,          // default for class? - need check for TBC
     POWER_HEALTH                        = 0xFFFFFFFE    // (-2 as signed value)
 };
 
@@ -553,6 +555,13 @@ enum Language
 };
 
 #define LANGUAGES_COUNT   19
+
+enum TeamId
+{
+    TEAM_ALLIANCE = 0,
+    TEAM_HORDE,
+    TEAM_NEUTRAL
+};
 
 // In fact !=0 values is alliance/horde root faction ids
 enum Team

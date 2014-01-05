@@ -40,13 +40,15 @@
 #include "Util.h"
 #include "ScriptMgr.h"
 #include "vmap/GameObjectModel.h"
+#include "CreatureAISelector.h"
 #include "SQLStorages.h"
 
 GameObject::GameObject() : WorldObject(),
     loot(this),
     m_model(NULL),
     m_goInfo(NULL),
-    m_displayInfo(NULL)
+    m_displayInfo(NULL),
+    m_AI(NULL)
 {
     m_objectType |= TYPEMASK_GAMEOBJECT;
     m_objectTypeId = TYPEID_GAMEOBJECT;
@@ -71,7 +73,30 @@ GameObject::GameObject() : WorldObject(),
 
 GameObject::~GameObject()
 {
+    delete m_AI;
     delete m_model;
+}
+
+bool GameObject::AIM_Initialize()
+{
+    if (m_AI)
+        delete m_AI;
+
+    m_AI = FactorySelector::SelectGameObjectAI(this);
+
+    if (!m_AI)
+        return false;
+
+    m_AI->InitializeAI();
+    return true;
+}
+
+std::string GameObject::GetAIName() const
+{
+    if (GameObjectInfo const* got = sObjectMgr.GetGameObjectInfo(GetEntry()))
+        return got->AIName;
+
+    return "";
 }
 
 void GameObject::AddToWorld()
@@ -203,6 +228,11 @@ void GameObject::Update(uint32 update_diff, uint32 p_time)
         //((Transport*)this)->Update(p_time);
         return;
     }
+
+    if (AI())
+        AI()->UpdateAI(update_diff);
+    else if (!AIM_Initialize())
+        sLog.outError("Could not initialize GameObjectAI");
 
     switch (m_lootState)
     {
@@ -970,6 +1000,15 @@ void GameObject::Use(Unit* user)
     Unit* spellCaster = user;
     uint32 spellId = 0;
     bool triggered = false;
+
+    if (Player* playerUser = user->ToPlayer())
+    {
+        if (sScriptMgr.OnGossipHello(playerUser, this))
+            return;
+
+        if (AI()->GossipHello(playerUser))
+            return;
+    }
 
     // test only for exist cooldown data (cooldown timer used for door/buttons reset that not have use cooldown)
     if (uint32 cooldown = GetGOInfo()->GetCooldown())
